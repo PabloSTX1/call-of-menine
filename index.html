@@ -6,7 +6,6 @@
 <title>CS2 Sorteio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #08090b; --bg2: #0f1115; --bg3: #161820; --bg4: #1d2029;
@@ -413,8 +412,13 @@ const ADMIN_PASS    = 'CSZADA';
 const SUPABASE_URL  = 'https://jtrhojcznxsxmakrtqrx.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0cmhvamN6bnhzeG1ha3J0cXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MDExMjQsImV4cCI6MjA5NDM3NzEyNH0.yGjYbUCv0E2hscZQKN5Vr0N6CwOHkc4j46m9uX1cmlo';
 
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const API = SUPABASE_URL + '/rest/v1';
+const H = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
 
 let players      = [];
 let maps         = [];
@@ -442,41 +446,55 @@ function setLoading(on) {
   document.getElementById('loading-overlay').classList.toggle('hidden', !on);
 }
 
-/* ---- SUPABASE OPS ---- */
+/* ---- REST API OPS ---- */
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(API + path, { ...opts, headers: { ...H, ...(opts.headers || {}) } });
+  const text = await r.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!r.ok) throw { status: r.status, msg: (data && (data.message || data.details)) || r.statusText };
+  return data;
+}
+
 async function loadPlayers() {
-  const { data } = await db.from('cs2_jogadores').select('*').order('stars', { ascending: false }).order('created_at');
+  const data = await apiFetch('/cs2_jogadores?select=*&order=stars.desc,created_at.asc');
   players = data || [];
 }
 
 async function loadMaps() {
-  const { data } = await db.from('cs2_mapas').select('*').order('created_at');
+  const data = await apiFetch('/cs2_mapas?select=*&order=created_at.asc');
   maps = data || [];
 }
 
 async function dbAddPlayer(name, stars) {
-  const { data, error } = await db.from('cs2_jogadores').insert({ name, stars }).select().single();
-  if (error) { console.error('dbAddPlayer:', error); return { ok: false, msg: error.message }; }
-  players = [...players, data].sort((a,b) => b.stars - a.stars);
-  return { ok: true };
+  try {
+    const data = await apiFetch('/cs2_jogadores', { method: 'POST', body: JSON.stringify({ name, stars }) });
+    const item = Array.isArray(data) ? data[0] : data;
+    players = [...players, item].sort((a,b) => b.stars - a.stars);
+    return { ok: true };
+  } catch(e) { console.error('dbAddPlayer:', e); return { ok: false, msg: e.msg || 'Erro desconhecido' }; }
 }
 
 async function dbDeletePlayer(id) {
-  const { error } = await db.from('cs2_jogadores').delete().eq('id', id);
-  if (error) { console.error('dbDeletePlayer:', error); return false; }
-  players = players.filter(p => p.id !== id); return true;
+  try {
+    await apiFetch('/cs2_jogadores?id=eq.' + id, { method: 'DELETE', headers: { 'Prefer': '' } });
+    players = players.filter(p => p.id !== id); return true;
+  } catch(e) { console.error('dbDeletePlayer:', e); return false; }
 }
 
 async function dbAddMap(name, emoji, descricao) {
-  const { data, error } = await db.from('cs2_mapas').insert({ name, emoji, descricao }).select().single();
-  if (error) { console.error('dbAddMap:', error); return { ok: false, msg: error.message }; }
-  maps = [...maps, data];
-  return { ok: true };
+  try {
+    const data = await apiFetch('/cs2_mapas', { method: 'POST', body: JSON.stringify({ name, emoji, descricao }) });
+    const item = Array.isArray(data) ? data[0] : data;
+    maps = [...maps, item];
+    return { ok: true };
+  } catch(e) { console.error('dbAddMap:', e); return { ok: false, msg: e.msg || 'Erro desconhecido' }; }
 }
 
 async function dbDeleteMap(id) {
-  const { error } = await db.from('cs2_mapas').delete().eq('id', id);
-  if (error) { console.error('dbDeleteMap:', error); return false; }
-  maps = maps.filter(m => m.id !== id); return true;
+  try {
+    await apiFetch('/cs2_mapas?id=eq.' + id, { method: 'DELETE', headers: { 'Prefer': '' } });
+    maps = maps.filter(m => m.id !== id); return true;
+  } catch(e) { console.error('dbDeleteMap:', e); return false; }
 }
 
 /* ---- ADMIN ---- */
@@ -741,27 +759,20 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 /* ---- INIT ---- */
 async function init() {
   setLoading(true);
-
-  const [rP, rM] = await Promise.all([
-    db.from('cs2_jogadores').select('*').order('stars', { ascending: false }).order('created_at'),
-    db.from('cs2_mapas').select('*').order('created_at')
-  ]);
-
-  if (rP.error) {
-    console.error('Erro ao carregar jogadores:', rP.error);
+  try {
+    await Promise.all([loadPlayers(), loadMaps()]);
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e);
     setLoading(false);
     document.getElementById('player-list').innerHTML =
-      `<div class="empty-msg" style="color:#e07070;">Erro ao conectar ao banco: ${rP.error.message}</div>`;
+      '<div class="empty-msg" style="color:#e07070;">Erro ao conectar ao banco: ' + (e.msg || e.message || 'verifique o Supabase') + '</div>';
     return;
   }
-
-  players = rP.data || [];
-  maps    = rM.data || [];
 
   if (maps.length === 0) {
     for (const m of DEFAULT_MAPS) {
       const res = await dbAddMap(m.name, m.emoji, m.descricao);
-      if (!res.ok) { console.error('Erro ao inserir mapa padrão:', m.name, res.msg); }
+      if (!res.ok) console.error('Erro ao inserir mapa padrao:', m.name, res.msg);
     }
   }
 
