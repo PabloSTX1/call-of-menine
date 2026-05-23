@@ -742,13 +742,23 @@ function sortear() {
   if (selectedIds.size !== 10) { showWarn(`Selecione exatamente 10 jogadores (${selectedIds.size} selecionados).`); return; }
   if (!maps.length) { showWarn('Nenhum mapa cadastrado.'); return; }
 
-  const pool    = players.filter(p => selectedIds.has(p.id));
-  const byStars = [...pool].sort((a,b) => b.stars - a.stars);
-  const order   = [0,1,1,0,0,1,1,0,0,1];
+  const pool = players.filter(p => selectedIds.has(p.id));
+
+  // Ordena por estrelas, empates quebrados aleatoriamente
+  const sorted = [...pool]
+    .map(p => ({ ...p, _r: Math.random() }))
+    .sort((a, b) => b.stars - a.stars || a._r - b._r);
+
+  // Forma 5 pares de estrelas similares (1º+2º, 3º+4º, ...) e sorteia cada par
   const ct = [], tr = [];
-  byStars.forEach((p,i) => { if (order[i]===0) ct.push(p); else tr.push(p); });
-  ct.sort(() => Math.random()-.5);
-  tr.sort(() => Math.random()-.5);
+  for (let i = 0; i < 10; i += 2) {
+    if (Math.random() < 0.5) { ct.push(sorted[i]); tr.push(sorted[i+1]); }
+    else                      { tr.push(sorted[i]); ct.push(sorted[i+1]); }
+  }
+
+  // Embaralha a ordem de exibição dentro de cada time
+  ct.sort(() => Math.random() - 0.5);
+  tr.sort(() => Math.random() - 0.5);
 
   const map = maps[Math.floor(Math.random()*maps.length)];
   document.getElementById('map-icon').textContent  = map.emoji;
