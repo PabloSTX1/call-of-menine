@@ -161,6 +161,10 @@
   }
   .del-btn:hover { color: var(--danger); background: rgba(208,69,69,0.12); }
   .del-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .star-edit { font-size: 11px; color: var(--text3); cursor: pointer; transition: color .1s, transform .1s; padding: 0 1px; }
+  .star-edit.lit { color: var(--gold); }
+  .star-edit:hover { transform: scale(1.2); color: var(--gold); }
+  .saving-stars { opacity: .5; pointer-events: none; }
   .empty-msg { text-align: center; color: var(--text3); padding: 32px; font-size: 14px; }
 
   /* SORTEIO */
@@ -501,6 +505,20 @@ async function dbDeletePlayer(id) {
   } catch(e) { console.error('dbDeletePlayer:', e); return false; }
 }
 
+async function dbUpdatePlayer(id, stars) {
+  try {
+    await apiFetch('/cs2_jogadores?id=eq.' + id, {
+      method: 'PATCH',
+      headers: { 'Prefer': '' },
+      body: JSON.stringify({ stars })
+    });
+    const p = players.find(p => p.id === id);
+    if (p) p.stars = stars;
+    players.sort((a,b) => b.stars - a.stars);
+    return true;
+  } catch(e) { console.error('dbUpdatePlayer:', e); return false; }
+}
+
 async function dbAddMap(name, emoji, descricao) {
   try {
     const data = await apiFetch('/cs2_mapas', { method: 'POST', body: JSON.stringify({ name, emoji, descricao }) });
@@ -595,6 +613,14 @@ function renderStars(n, cls) {
   return s;
 }
 
+/* ---- RENDER STARS EDITABLE ---- */
+function renderStarsEditable(p) {
+  let s = '';
+  for (let i = 1; i <= 10; i++)
+    s += `<span class="star-edit${i<=p.stars?' lit':''}" data-id="${p.id}" data-v="${i}">&#9733;</span>`;
+  return s;
+}
+
 /* ---- RENDER PLAYERS ---- */
 function renderPlayers() {
   const el = document.getElementById('player-list');
@@ -603,9 +629,40 @@ function renderPlayers() {
     <div class="player-row">
       <span class="player-num">${String(i+1).padStart(2,'0')}</span>
       <span class="player-name">${esc(p.name)}</span>
-      <div class="player-stars">${renderStars(p.stars,'star-s')}</div>
+      <div class="player-stars" data-pid="${p.id}">
+        ${isAdmin ? renderStarsEditable(p) : renderStars(p.stars,'star-s')}
+      </div>
       ${isAdmin ? `<button class="del-btn" data-id="${p.id}" title="Remover">&#10005;</button>` : ''}
     </div>`).join('');
+
+  if (isAdmin) {
+    el.querySelectorAll('.star-edit').forEach(star => {
+      star.addEventListener('mouseover', () => {
+        const pid = star.dataset.id, v = parseInt(star.dataset.v);
+        el.querySelectorAll(`.star-edit[data-id="${pid}"]`).forEach(s => {
+          s.classList.toggle('lit', parseInt(s.dataset.v) <= v);
+        });
+      });
+      star.addEventListener('mouseout', () => {
+        const pid = star.dataset.id;
+        const p = players.find(p => p.id === pid);
+        el.querySelectorAll(`.star-edit[data-id="${pid}"]`).forEach(s => {
+          s.classList.toggle('lit', parseInt(s.dataset.v) <= p.stars);
+        });
+      });
+      star.addEventListener('click', async () => {
+        const pid = star.dataset.id, newStars = parseInt(star.dataset.v);
+        const p = players.find(p => p.id === pid);
+        if (!p || p.stars === newStars) return;
+        const row = el.querySelector(`.player-stars[data-pid="${pid}"]`);
+        row.classList.add('saving-stars');
+        const ok = await dbUpdatePlayer(pid, newStars);
+        if (ok) { renderPlayers(); renderSelectable(); showToast('Estrelas atualizadas!'); }
+        else { row.classList.remove('saving-stars'); showToast('Erro ao atualizar estrelas', true); }
+      });
+    });
+  }
+
   el.querySelectorAll('.del-btn').forEach(b => {
     b.addEventListener('click', async () => {
       b.disabled = true;
