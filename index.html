@@ -120,10 +120,10 @@
   .field input[type="text"]:focus { border-color: var(--accent); }
   .field input[type="text"]::placeholder { color: var(--text3); }
 
-  .stars-input { display: flex; gap: 4px; align-items: center; height: 38px; }
+  .stars-input { display: flex; gap: 2px; align-items: center; height: 38px; flex-wrap: nowrap; }
   .star-btn {
-    background: none; border: none; cursor: pointer; font-size: 22px;
-    color: var(--text3); transition: color 0.15s, transform 0.1s; line-height: 1; padding: 0 1px;
+    background: none; border: none; cursor: pointer; font-size: 17px;
+    color: var(--text3); transition: color 0.15s, transform 0.1s; line-height: 1; padding: 0;
   }
   .star-btn.lit { color: var(--gold); }
   .star-btn:hover { transform: scale(1.15); }
@@ -152,7 +152,7 @@
   .player-num { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text3); width: 22px; text-align: right; }
   .player-name { flex: 1; font-weight: 600; font-size: 15px; color: var(--text); }
   .player-stars { display: flex; gap: 2px; }
-  .star-s { font-size: 14px; color: var(--text3); }
+  .star-s { font-size: 11px; color: var(--text3); }
   .star-s.lit { color: var(--gold); }
   .del-btn {
     background: none; border: none; color: var(--text3); cursor: pointer;
@@ -190,7 +190,7 @@
   .sel-row.selected .sel-check-mark { display: block; }
   .sel-name { flex: 1; font-size: 14px; font-weight: 600; }
   .sel-stars { display: flex; gap: 2px; }
-  .star-xs { font-size: 12px; color: var(--text3); }
+  .star-xs { font-size: 10px; color: var(--text3); }
   .star-xs.lit { color: var(--gold); }
   .count-badge {
     display: inline-flex; align-items: center; gap: 6px;
@@ -329,6 +329,11 @@
             <button class="star-btn" data-v="3">&#9733;</button>
             <button class="star-btn" data-v="4">&#9733;</button>
             <button class="star-btn" data-v="5">&#9733;</button>
+            <button class="star-btn" data-v="6">&#9733;</button>
+            <button class="star-btn" data-v="7">&#9733;</button>
+            <button class="star-btn" data-v="8">&#9733;</button>
+            <button class="star-btn" data-v="9">&#9733;</button>
+            <button class="star-btn" data-v="10">&#9733;</button>
           </div>
         </div>
         <button class="btn" id="add-btn">+ Adicionar</button>
@@ -566,7 +571,7 @@ function setStars(v) {
   selectedStars = v;
   starsInput.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('lit', parseInt(b.dataset.v) <= v));
 }
-setStars(3);
+setStars(5);
 starsInput.querySelectorAll('.star-btn').forEach(b => b.addEventListener('click', () => setStars(parseInt(b.dataset.v))));
 
 /* ---- ADD PLAYER ---- */
@@ -586,7 +591,7 @@ document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key
 /* ---- RENDER STARS ---- */
 function renderStars(n, cls) {
   let s = '';
-  for (let i = 1; i <= 5; i++) s += `<span class="${cls}${i<=n?' lit':''}">&#9733;</span>`;
+  for (let i = 1; i <= 10; i++) s += `<span class="${cls}${i<=n?' lit':''}">&#9733;</span>`;
   return s;
 }
 
