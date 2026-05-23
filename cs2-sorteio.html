@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 Sorteio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08090b;
+    --bg2: #0f1115;
+    --bg3: #161820;
+    --bg4: #1d2029;
+    --border: #2a2d38;
+    --border2: #373b4a;
+    --accent: #e8a020;
+    --accent2: #c47d10;
+    --ct: #4a8fcb;
+    --ct2: #2d6fa8;
+    --tr: #e05a1a;
+    --tr2: #b84010;
+    --text: #d0d4e0;
+    --text2: #8890a0;
+    --text3: #545a68;
+    --success: #3cb87a;
+    --danger: #d04545;
+    --gold: #f5c842;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(232,160,32,0.06) 0%, transparent 70%),
+      linear-gradient(180deg, #0b0d12 0%, var(--bg) 100%);
+  }
+
+  /* --- HEADER --- */
+  header {
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,9,11,0.9);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .logo-text span { color: var(--accent); }
+
+  /* --- TABS --- */
+  .tabs-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    background: rgba(232,160,32,0.08);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
+
+  /* --- MAIN --- */
+  main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadein 0.25s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* --- SECTION TITLE --- */
+  .sec-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .sec-sub { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+
+  /* --- CARD --- */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  /* --- ADD PLAYER FORM --- */
+  .add-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+  .field input[type="text"] {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    padding: 9px 14px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input[type="text"]:focus { border-color: var(--accent); }
+  .field input[type="text"]::placeholder { color: var(--text3); }
+
+  /* star rating */
+  .stars-input { display: flex; gap: 4px; align-items: center; height: 38px; }
+  .star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: var(--text3);
+    transition: color 0.15s, transform 0.1s;
+    line-height: 1;
+    padding: 0 1px;
+  }
+  .star-btn.lit { color: var(--gold); }
+  .star-btn:hover { transform: scale(1.15); }
+
+  .btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 5px;
+    color: #000;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 10px 22px;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+  .btn:hover { background: #f0b030; }
+  .btn:active { transform: scale(0.97); }
+  .btn.secondary {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+  }
+  .btn.secondary:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .btn.danger { background: var(--danger); color: #fff; }
+  .btn.danger:hover { background: #b83b3b; }
+
+  /* --- PLAYER LIST --- */
+  .player-list { display: flex; flex-direction: column; gap: 8px; }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 16px;
+    transition: border-color 0.2s;
+  }
+  .player-row:hover { border-color: var(--border2); }
+  .player-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .player-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .player-stars { display: flex; gap: 2px; }
+  .star-s { font-size: 14px; color: var(--text3); }
+  .star-s.lit { color: var(--gold); }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+  }
+  .del-btn:hover { color: var(--danger); background: rgba(208,69,69,0.12); }
+  .empty-msg {
+    text-align: center;
+    color: var(--text3);
+    padding: 32px;
+    font-size: 14px;
+  }
+
+  /* --- SORTEIO TAB --- */
+  .sorteio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 620px) { .sorteio-grid { grid-template-columns: 1fr; } }
+
+  .select-all-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .select-all-row span { font-size: 13px; color: var(--text2); }
+
+  .selectable-list { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
+  .selectable-list::-webkit-scrollbar { width: 4px; }
+  .selectable-list::-webkit-scrollbar-track { background: var(--bg3); }
+  .selectable-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .sel-row.selected { border-color: var(--accent); background: rgba(232,160,32,0.07); }
+  .sel-row:hover:not(.selected) { border-color: var(--border2); }
+  .sel-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border2);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .sel-row.selected .sel-check { background: var(--accent); border-color: var(--accent); }
+  .sel-check-mark { color: #000; font-size: 11px; font-weight: 700; display: none; }
+  .sel-row.selected .sel-check-mark { display: block; }
+  .sel-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .sel-stars { display: flex; gap: 2px; }
+  .star-xs { font-size: 12px; color: var(--text3); }
+  .star-xs.lit { color: var(--gold); }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+  .count-badge b { color: var(--accent); }
+
+  .sortear-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  /* --- RESULTADO --- */
+  #resultado { margin-top: 32px; display: none; }
+  #resultado.show { display: block; animation: fadein 0.35s ease; }
+
+  .result-header {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .result-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 540px) { .teams-grid { grid-template-columns: 1fr; } }
+
+  .team-card {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .team-header {
+    padding: 14px 18px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .team-ct .team-header { background: rgba(74,143,203,0.15); border-bottom: 1px solid rgba(74,143,203,0.3); }
+  .team-tr .team-header { background: rgba(224,90,26,0.15); border-bottom: 1px solid rgba(224,90,26,0.3); }
+  .team-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .team-ct .team-label { color: var(--ct); }
+  .team-tr .team-label { color: var(--tr); }
+  .team-rating {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .team-rating span { color: var(--gold); font-weight: 600; }
+
+  .team-players { background: var(--bg2); }
+  .team-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .team-player:last-child { border-bottom: none; }
+  .tp-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    width: 16px;
+  }
+  .tp-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .tp-stars { display: flex; gap: 1px; }
+  .star-tp { font-size: 11px; color: var(--text3); }
+  .star-tp.lit { color: var(--gold); }
+
+  /* MAP CARD */
+  .map-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .map-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--border2);
+  }
+  .map-info { flex: 1; }
+  .map-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+  .map-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .map-pool {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .warn-msg {
+    background: rgba(208,69,69,0.1);
+    border: 1px solid rgba(208,69,69,0.3);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #e07070;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .warn-msg.show { display: block; }
+
+  /* spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display: inline-block; animation: spin 0.7s linear infinite; }
+
+  /* shuffle animation */
+  @keyframes shuffle {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px) rotate(-1deg); }
+    75% { transform: translateX(4px) rotate(1deg); }
+  }
+  .shuffling { animation: shuffle 0.15s ease 4; }
+  #map-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* --- LOCK BUTTON --- */
+  #lock-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: none; border: 1px solid var(--border);
+    border-radius: 5px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text3); padding: 5px 12px;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+  #lock-btn:hover { background: rgba(255,255,255,.04); }
+  #lock-btn.admin-on { color: var(--accent); border-color: rgba(232,160,32,.4); }
+
+  /* --- MODAL --- */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  #modal-overlay.show { display: flex; animation: fadein .2s ease; }
+  .modal-box {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 32px 30px 28px; width: 340px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+  }
+  .modal-icon { font-size: 28px; margin-bottom: 14px; }
+  .modal-title {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
+    color: #fff; margin-bottom: 5px;
+  }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 22px; }
+  .modal-label {
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text2); margin-bottom: 6px; display: block;
+  }
+  .modal-inp {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text);
+    font-family: 'Barlow', sans-serif; font-size: 15px;
+    padding: 10px 14px; outline: none; margin-bottom: 10px;
+    transition: border-color .2s; letter-spacing: .05em;
+  }
+  .modal-inp:focus { border-color: var(--accent); }
+  .modal-err {
+    font-size: 12px; color: #e07070; margin-bottom: 16px; display: none;
+    background: rgba(208,69,69,.1); border: 1px solid rgba(208,69,69,.25);
+    border-radius: 5px; padding: 7px 12px;
+  }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; padding: 10px; text-align: center; align-self: auto; }
+  .modal-actions .btn.secondary { flex: none; padding: 10px 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">CS</div>
+      <div class="logo-text">Sorteio <span>CS2</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="jogadores">&#9670; Jogadores</button>
+        <button class="tab-btn" data-tab="sorteio">&#9670; Sorteio</button>
+      </nav>
+      <button id="lock-btn" title="Acesso administrativo">🔒 <span>Admin</span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== JOGADORES ===== -->
+  <div class="tab-panel active" id="tab-jogadores">
+    <div class="sec-title">Jogadores</div>
+    <div class="sec-sub">Cadastre os jogadores e defina o nível de habilidade em estrelas.</div>
+
+    <div class="card" id="add-card">
+      <div class="add-form">
+        <div class="field">
+          <label>Nome do jogador</label>
+          <input type="text" id="inp-nome" placeholder="Ex: Gabriel" maxlength="24" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Nível (estrelas)</label>
+          <div class="stars-input" id="stars-input">
+            <button class="star-btn" data-v="1">&#9733;</button>
+            <button class="star-btn" data-v="2">&#9733;</button>
+            <button class="star-btn" data-v="3">&#9733;</button>
+            <button class="star-btn" data-v="4">&#9733;</button>
+            <button class="star-btn" data-v="5">&#9733;</button>
+          </div>
+        </div>
+        <button class="btn" id="add-btn">+ Adicionar</button>
+      </div>
+    </div>
+
+    <div class="player-list" id="player-list">
+      <div class="empty-msg">Nenhum jogador cadastrado ainda.</div>
+    </div>
+  </div>
+
+  <!-- ===== SORTEIO ===== -->
+  <div class="tab-panel" id="tab-sorteio">
+    <div class="sec-title">Sorteio de Times</div>
+    <div class="sec-sub">Selecione os 10 jogadores que vão jogar e clique em Sortear.</div>
+
+    <div class="count-badge">
+      Jogadores selecionados: <b id="sel-count">0</b> / 10
+    </div>
+
+    <div class="sorteio-grid">
+      <div>
+        <div class="select-all-row">
+          <span>Selecionar jogadores</span>
+          <button class="btn secondary" id="clear-sel" style="padding:5px 12px;font-size:12px;">Limpar</button>
+        </div>
+        <div class="selectable-list" id="selectable-list">
+          <div class="empty-msg">Nenhum jogador cadastrado.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);">Mapas disponíveis</div>
+            <button id="map-edit-btn" style="
+              background:none;border:1px solid var(--border2);border-radius:4px;
+              color:var(--text2);font-family:'Rajdhani',sans-serif;font-weight:600;
+              font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+              cursor:pointer;padding:3px 10px;transition:color .15s,border-color .15s;">✎ Editar</button>
+          </div>
+          <div id="map-pool-container" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div style="margin-top:20px;">
+          <div class="warn-msg" id="warn-msg"></div>
+          <button class="btn sortear-btn" id="sortear-btn">
+            <span>&#9670;</span> Sortear Times &amp; Mapa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultado">
+      <div class="result-header">Resultado do Sorteio</div>
+
+      <div class="map-card" style="margin-bottom:16px;" id="map-result">
+        <div class="map-icon" id="map-icon">🗺️</div>
+        <div class="map-info">
+          <div class="map-label">Mapa sorteado</div>
+          <div class="map-name" id="map-name">—</div>
+          <div class="map-pool" id="map-desc"></div>
+        </div>
+      </div>
+
+      <div class="teams-grid">
+        <div class="team-card team-ct">
+          <div class="team-header">
+            <div class="team-label">◈ Counter-Terrorists</div>
+            <div class="team-rating">★ <span id="ct-rating">0</span></div>
+          </div>
+          <div class="team-players" id="ct-players"></div>
+        </div>
+        <div class="team-card team-tr">
+          <div class="team-header">
+            <div class="team-label">◈ Terrorists</div>
+            <div class="team-rating">★ <span id="tr-rating">0</span></div>
+          </div>
+          <div class="team-players" id="tr-players"></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:8px;">
+        <button class="btn secondary" id="ressortear-btn" style="gap:8px;display:inline-flex;align-items:center;">
+          ↺ Novo Sorteio
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL LOGIN ADMIN -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title">Acesso Admin</div>
+    <div class="modal-sub">Digite a senha para entrar no modo administrador.</div>
+    <label class="modal-label" for="modal-pass">Senha</label>
+    <input class="modal-inp" type="password" id="modal-pass" placeholder="••••••••" autocomplete="off">
+    <div class="modal-err" id="modal-err">Senha incorreta. Tente novamente.</div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="modal-cancel-btn">Cancelar</button>
+      <button class="btn" id="modal-login-btn">&#9670; Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASS = 'CSZADA'; // ← altere aqui para mudar a senha
+
+let players = JSON.parse(localStorage.getItem('cs2_players') || '[]');
+let isAdmin  = sessionStorage.getItem('cs2_admin') === '1';
+let selectedStars = 3;
+let selectedIds   = new Set();
+
+function save() { localStorage.setItem('cs2_players', JSON.stringify(players)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* ---- ADMIN ---- */
+function updateAdminUI() {
+  const lockBtn = document.getElementById('lock-btn');
+  const addCard = document.getElementById('add-card');
+  const editBtn = document.getElementById('map-edit-btn');
+  if (isAdmin) {
+    lockBtn.innerHTML = '🔓 <span>Admin</span>';
+    lockBtn.classList.add('admin-on');
+    addCard.style.display = 'block';
+    if (editBtn) editBtn.style.display = 'flex';
+  } else {
+    lockBtn.innerHTML = '🔒 <span>Admin</span>';
+    lockBtn.classList.remove('admin-on');
+    addCard.style.display = 'none';
+    if (editBtn) { editBtn.style.display = 'none'; mapsEditMode = false; }
+  }
+  renderPlayers();
+  if (document.getElementById('map-pool-container')) renderMapPool();
+}
+
+function openLoginModal() {
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-pass').value = '';
+  document.getElementById('modal-err').style.display = 'none';
+  setTimeout(() => document.getElementById('modal-pass').focus(), 120);
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+function doLogin() {
+  if (document.getElementById('modal-pass').value === ADMIN_PASS) {
+    isAdmin = true;
+    sessionStorage.setItem('cs2_admin', '1');
+    closeModal();
+    updateAdminUI();
+  } else {
+    document.getElementById('modal-err').style.display = 'block';
+    document.getElementById('modal-pass').value = '';
+    document.getElementById('modal-pass').focus();
+  }
+}
+function doLogout() {
+  isAdmin = false; mapsEditMode = false;
+  sessionStorage.removeItem('cs2_admin');
+  updateAdminUI();
+}
+
+document.getElementById('lock-btn').addEventListener('click', () => {
+  if (isAdmin) doLogout(); else openLoginModal();
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+document.getElementById('modal-login-btn').addEventListener('click', doLogin);
+document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+document.getElementById('modal-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ---- STAR INPUT ---- */
+const starsInput = document.getElementById('stars-input');
+function setStars(v) {
+  selectedStars = v;
+  starsInput.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('lit', parseInt(b.dataset.v) <= v);
+  });
+}
+setStars(3);
+starsInput.querySelectorAll('.star-btn').forEach(b => {
+  b.addEventListener('click', () => setStars(parseInt(b.dataset.v)));
+});
+
+/* ---- ADD PLAYER ---- */
+document.getElementById('add-btn').addEventListener('click', () => {
+  if (!isAdmin) return;
+  const nome = document.getElementById('inp-nome').value.trim();
+  if (!nome) { document.getElementById('inp-nome').focus(); return; }
+  players.push({ id: genId(), name: nome, stars: selectedStars });
+  save();
+  document.getElementById('inp-nome').value = '';
+  renderPlayers();
+  renderSelectable();
+});
+document.getElementById('inp-nome').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('add-btn').click();
+});
+
+/* ---- RENDER STARS ---- */
+function renderStars(n, cls) {
+  let s = '';
+  for (let i = 1; i <= 5; i++)
+    s += `<span class="${cls}${i <= n ? ' lit' : ''}">&#9733;</span>`;
+  return s;
+}
+
+/* ---- RENDER PLAYER LIST ---- */
+function renderPlayers() {
+  const el = document.getElementById('player-list');
+  if (!players.length) {
+    el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado ainda.</div>';
+    return;
+  }
+  const sorted = [...players].sort((a, b) => b.stars - a.stars);
+  el.innerHTML = sorted.map((p, i) => `
+    <div class="player-row">
+      <span class="player-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="player-name">${esc(p.name)}</span>
+      <div class="player-stars">${renderStars(p.stars, 'star-s')}</div>
+      ${isAdmin ? `<button class="del-btn" data-id="${p.id}" title="Remover">&#10005;</button>` : ''}
+    </div>`).join('');
+  el.querySelectorAll('.del-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      players = players.filter(p => p.id !== b.dataset.id);
+      selectedIds.delete(b.dataset.id);
+      save(); renderPlayers(); renderSelectable(); updateCount();
+    });
+  });
+}
+
+/* ---- MAPS ---- */
+const DEFAULT_MAPS = [
+  { name: 'Mirage',   emoji: '🏜️', desc: 'Mapa clássico e equilibrado' },
+  { name: 'Inferno',  emoji: '🌋', desc: 'Ruas estreitas e muita pressão' },
+  { name: 'Dust2',    emoji: '🏛️', desc: 'O mapa mais icônico do CS' },
+  { name: 'Nuke',     emoji: '☢️', desc: 'Complexidade vertical única' },
+  { name: 'Ancient',  emoji: '🗿', desc: 'Ruínas com muitos ângulos' },
+  { name: 'Anubis',   emoji: '⚱️', desc: 'Temática egípcia, mid importante' },
+  { name: 'Vertigo',  emoji: '🏗️', desc: 'Luta nos andares mais altos' },
+  { name: 'Train',    emoji: '🚂', desc: 'Clássico retornando ao pool' },
+  { name: 'Cache',    emoji: '☣️', desc: 'Favorito da comunidade' },
+  { name: 'Overpass', emoji: '🌉', desc: 'Água e muitas opções táticas' },
+];
+let maps = JSON.parse(localStorage.getItem('cs2_maps') || 'null') || DEFAULT_MAPS;
+let mapsEditMode = false;
+function saveMaps() { localStorage.setItem('cs2_maps', JSON.stringify(maps)); }
+
+/* ---- RENDER SELECTABLE ---- */
+function renderSelectable() {
+  const el = document.getElementById('selectable-list');
+  if (!players.length) {
+    el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado.</div>';
+    return;
+  }
+  const sorted = [...players].sort((a, b) => b.stars - a.stars);
+  el.innerHTML = sorted.map(p => `
+    <div class="sel-row${selectedIds.has(p.id) ? ' selected' : ''}" data-id="${p.id}">
+      <div class="sel-check"><span class="sel-check-mark">&#10003;</span></div>
+      <span class="sel-name">${esc(p.name)}</span>
+      <div class="sel-stars">${renderStars(p.stars, 'star-xs')}</div>
+    </div>`).join('');
+  el.querySelectorAll('.sel-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.id;
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id); row.classList.remove('selected');
+      } else {
+        if (selectedIds.size >= 10) { showWarn('Máximo de 10 jogadores selecionados.'); return; }
+        selectedIds.add(id); row.classList.add('selected');
+      }
+      updateCount();
+    });
+  });
+}
+
+/* ---- RENDER MAP POOL ---- */
+function renderMapPool() {
+  const container = document.getElementById('map-pool-container');
+  const editBtn   = document.getElementById('map-edit-btn');
+  if (editBtn) editBtn.textContent = mapsEditMode ? '✓ Concluir' : '✎ Editar';
+
+  if (!isAdmin || !mapsEditMode) {
+    container.innerHTML = maps.map(m => `
+      <span style="display:inline-flex;align-items:center;gap:5px;
+        background:var(--bg3);border:1px solid var(--border);
+        border-radius:20px;padding:3px 10px;font-size:12px;color:var(--text2);">
+        ${m.emoji} ${m.name}
+      </span>`).join('');
+  } else {
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+        ${maps.map((m, i) => `
+          <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);
+            border:1px solid var(--border);border-radius:6px;padding:7px 12px;">
+            <span style="font-size:18px;flex-shrink:0;">${m.emoji}</span>
+            <span style="flex:1;font-size:13px;font-weight:600;color:var(--text);">${esc(m.name)}</span>
+            <button class="del-map-btn" data-i="${i}" style="
+              background:none;border:none;color:var(--text3);cursor:pointer;
+              font-size:14px;padding:2px 6px;border-radius:4px;line-height:1;">&#10005;</button>
+          </div>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
+          <input id="inp-map-emoji" type="text" placeholder="🗺️" maxlength="4"
+            style="width:54px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:5px;color:var(--text);font-size:18px;padding:6px 8px;outline:none;text-align:center;">
+          <input id="inp-map-name" type="text" placeholder="Nome do mapa" maxlength="24"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:5px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 11px;outline:none;">
+          <button id="add-map-btn" style="
+            background:var(--accent);border:none;border-radius:5px;color:#000;
+            font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;
+            letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:8px 14px;white-space:nowrap;">+ Mapa</button>
+        </div>
+      </div>`;
+
+    container.querySelectorAll('.del-map-btn').forEach(b => {
+      b.addEventListener('mouseover', () => { b.style.color='var(--danger)'; b.style.background='rgba(208,69,69,0.12)'; });
+      b.addEventListener('mouseout',  () => { b.style.color='var(--text3)';  b.style.background='none'; });
+      b.addEventListener('click', () => { maps.splice(parseInt(b.dataset.i), 1); saveMaps(); renderMapPool(); });
+    });
+
+    const addMapBtn = document.getElementById('add-map-btn');
+    const inpName   = document.getElementById('inp-map-name');
+    const inpEmoji  = document.getElementById('inp-map-emoji');
+    function doAddMap() {
+      const name  = inpName.value.trim();
+      const emoji = inpEmoji.value.trim() || '🗺️';
+      if (!name) { inpName.focus(); return; }
+      maps.push({ name, emoji, desc: '' }); saveMaps();
+      inpName.value = ''; inpEmoji.value = ''; renderMapPool();
+      setTimeout(() => { document.getElementById('inp-map-name') && document.getElementById('inp-map-name').focus(); }, 50);
+    }
+    addMapBtn.addEventListener('click', doAddMap);
+    inpName.addEventListener('keydown', e => { if (e.key === 'Enter') doAddMap(); });
+    inpEmoji.addEventListener('focus', () => { inpEmoji.style.borderColor='var(--accent)'; });
+    inpEmoji.addEventListener('blur',  () => { inpEmoji.style.borderColor='var(--border2)'; });
+    inpName.addEventListener('focus',  () => { inpName.style.borderColor='var(--accent)'; });
+    inpName.addEventListener('blur',   () => { inpName.style.borderColor='var(--border2)'; });
+  }
+}
+
+document.getElementById('map-edit-btn').addEventListener('click', () => {
+  if (!isAdmin) return;
+  mapsEditMode = !mapsEditMode;
+  renderMapPool();
+});
+
+/* ---- UPDATE COUNT ---- */
+function updateCount() {
+  document.getElementById('sel-count').textContent = selectedIds.size;
+  if (selectedIds.size === 10) {
+    const w = document.getElementById('warn-msg');
+    w.textContent = ''; w.classList.remove('show');
+  }
+}
+function showWarn(msg) {
+  const w = document.getElementById('warn-msg');
+  w.textContent = msg; w.classList.add('show');
+  setTimeout(() => w.classList.remove('show'), 3000);
+}
+
+/* ---- CLEAR SELECTION ---- */
+document.getElementById('clear-sel').addEventListener('click', () => {
+  selectedIds.clear(); renderSelectable(); updateCount();
+  document.getElementById('resultado').classList.remove('show');
+});
+
+/* ---- SORTEAR ---- */
+document.getElementById('sortear-btn').addEventListener('click', sortear);
+document.getElementById('ressortear-btn').addEventListener('click', sortear);
+
+function sortear() {
+  if (selectedIds.size !== 10) {
+    showWarn(`Selecione exatamente 10 jogadores (${selectedIds.size} selecionados).`);
+    return;
+  }
+  if (!maps.length) { showWarn('Nenhum mapa cadastrado.'); return; }
+
+  const pool    = players.filter(p => selectedIds.has(p.id));
+  const byStars = [...pool].sort((a, b) => b.stars - a.stars);
+  const order   = [0,1,1,0,0,1,1,0,0,1];
+  const ct = [], tr = [];
+  byStars.forEach((p, i) => { if (order[i] === 0) ct.push(p); else tr.push(p); });
+  ct.sort(() => Math.random() - 0.5);
+  tr.sort(() => Math.random() - 0.5);
+
+  const map = maps[Math.floor(Math.random() * maps.length)];
+  document.getElementById('map-icon').textContent  = map.emoji;
+  document.getElementById('map-name').textContent  = map.name;
+  document.getElementById('map-desc').textContent  = map.desc;
+  document.getElementById('ct-rating').textContent = ct.reduce((a,p) => a + p.stars, 0);
+  document.getElementById('tr-rating').textContent = tr.reduce((a,p) => a + p.stars, 0);
+
+  document.getElementById('ct-players').innerHTML = ct.map((p, i) => `
+    <div class="team-player">
+      <span class="tp-num">${i+1}</span>
+      <span class="tp-name">${esc(p.name)}</span>
+      <div class="tp-stars">${renderStars(p.stars, 'star-tp')}</div>
+    </div>`).join('');
+
+  document.getElementById('tr-players').innerHTML = tr.map((p, i) => `
+    <div class="team-player">
+      <span class="tp-num">${i+1}</span>
+      <span class="tp-name">${esc(p.name)}</span>
+      <div class="tp-stars">${renderStars(p.stars, 'star-tp')}</div>
+    </div>`).join('');
+
+  const res = document.getElementById('resultado');
+  res.classList.remove('show'); void res.offsetWidth;
+  res.classList.add('show');
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---- TABS ---- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'sorteio') {
+      mapsEditMode = false;
+      renderSelectable(); renderMapPool(); updateCount();
+    }
+  });
+});
+
+/* ---- UTIL ---- */
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ---- INIT ---- */
+updateAdminUI();
+renderSelectable();
+renderMapPool();
+updateCount();
+</script>
+</body>
+</html>
