@@ -6,300 +6,185 @@
 <title>CS2 Sorteio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #08090b;
-    --bg2: #0f1115;
-    --bg3: #161820;
-    --bg4: #1d2029;
-    --border: #2a2d38;
-    --border2: #373b4a;
-    --accent: #e8a020;
-    --accent2: #c47d10;
-    --ct: #4a8fcb;
-    --ct2: #2d6fa8;
-    --tr: #e05a1a;
-    --tr2: #b84010;
-    --text: #d0d4e0;
-    --text2: #8890a0;
-    --text3: #545a68;
-    --success: #3cb87a;
-    --danger: #d04545;
-    --gold: #f5c842;
+    --bg: #08090b; --bg2: #0f1115; --bg3: #161820; --bg4: #1d2029;
+    --border: #2a2d38; --border2: #373b4a;
+    --accent: #e8a020; --ct: #4a8fcb; --tr: #e05a1a;
+    --text: #d0d4e0; --text2: #8890a0; --text3: #545a68;
+    --danger: #d04545; --gold: #f5c842;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    font-size: 15px;
-    min-height: 100vh;
+    background: var(--bg); color: var(--text);
+    font-family: 'Barlow', sans-serif; font-size: 15px; min-height: 100vh;
     background-image:
       radial-gradient(ellipse 60% 40% at 50% 0%, rgba(232,160,32,0.06) 0%, transparent 70%),
       linear-gradient(180deg, #0b0d12 0%, var(--bg) 100%);
   }
 
-  /* --- HEADER --- */
+  /* LOADING BAR */
+  #loading-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 9999;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background-size: 200% 100%;
+    animation: loadslide 1.2s linear infinite;
+    display: none;
+  }
+  #loading-bar.show { display: block; }
+  @keyframes loadslide { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* LOADING OVERLAY */
+  #loading-overlay {
+    position: fixed; inset: 0; background: rgba(8,9,11,.85);
+    z-index: 500; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+  }
+  #loading-overlay.hidden { display: none; }
+  .loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-txt {
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text2);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* HEADER */
   header {
     border-bottom: 1px solid var(--border);
-    background: rgba(8,9,11,0.9);
-    backdrop-filter: blur(8px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: rgba(8,9,11,0.9); backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 100;
   }
   .header-inner {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 60px;
+    max-width: 960px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; height: 60px;
   }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .logo { display: flex; align-items: center; gap: 12px; }
   .logo-icon {
-    width: 34px;
-    height: 34px;
-    background: var(--accent);
+    width: 34px; height: 34px; background: var(--accent);
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: #000;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 14px; color: #000;
   }
   .logo-text {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 20px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #fff;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
   }
   .logo-text span { color: var(--accent); }
 
-  /* --- TABS --- */
-  .tabs-nav {
-    display: flex;
-    gap: 4px;
-  }
+  /* TABS */
+  .tabs-nav { display: flex; gap: 4px; }
   .tab-btn {
-    background: none;
-    border: none;
-    color: var(--text2);
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 6px 16px;
-    border-radius: 4px;
+    background: none; border: none; color: var(--text2);
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; padding: 6px 16px; border-radius: 4px;
     transition: color 0.2s, background 0.2s;
-    position: relative;
   }
-  .tab-btn.active {
-    color: var(--accent);
-    background: rgba(232,160,32,0.08);
-  }
+  .tab-btn.active { color: var(--accent); background: rgba(232,160,32,0.08); }
   .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
 
-  /* --- MAIN --- */
+  /* MAIN */
   main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; animation: fadein 0.25s ease; }
   @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  /* --- SECTION TITLE --- */
   .sec-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 26px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #fff;
-    margin-bottom: 4px;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; margin-bottom: 4px;
   }
   .sec-sub { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
 
-  /* --- CARD --- */
-  .card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
-  }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; }
 
-  /* --- ADD PLAYER FORM --- */
-  .add-form {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-  }
+  /* ADD FORM */
+  .add-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field label {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text2);
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
   }
   .field input[type="text"] {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 5px;
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    font-size: 14px;
-    padding: 9px 14px;
-    width: 220px;
-    outline: none;
-    transition: border-color 0.2s;
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px;
+    color: var(--text); font-family: 'Barlow', sans-serif; font-size: 14px;
+    padding: 9px 14px; width: 220px; outline: none; transition: border-color 0.2s;
   }
   .field input[type="text"]:focus { border-color: var(--accent); }
   .field input[type="text"]::placeholder { color: var(--text3); }
 
-  /* star rating */
   .stars-input { display: flex; gap: 4px; align-items: center; height: 38px; }
   .star-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 22px;
-    color: var(--text3);
-    transition: color 0.15s, transform 0.1s;
-    line-height: 1;
-    padding: 0 1px;
+    background: none; border: none; cursor: pointer; font-size: 22px;
+    color: var(--text3); transition: color 0.15s, transform 0.1s; line-height: 1; padding: 0 1px;
   }
   .star-btn.lit { color: var(--gold); }
   .star-btn:hover { transform: scale(1.15); }
 
   .btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 5px;
-    color: #000;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 10px 22px;
-    transition: background 0.2s, transform 0.1s;
-    white-space: nowrap;
-    align-self: flex-end;
+    background: var(--accent); border: none; border-radius: 5px; color: #000;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 14px;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 22px; transition: background 0.2s, transform 0.1s;
+    white-space: nowrap; align-self: flex-end;
   }
   .btn:hover { background: #f0b030; }
   .btn:active { transform: scale(0.97); }
-  .btn.secondary {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    color: var(--text);
-  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn.secondary { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); }
   .btn.secondary:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
-  .btn.danger { background: var(--danger); color: #fff; }
-  .btn.danger:hover { background: #b83b3b; }
 
-  /* --- PLAYER LIST --- */
+  /* PLAYER LIST */
   .player-list { display: flex; flex-direction: column; gap: 8px; }
   .player-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 11px 16px;
-    transition: border-color 0.2s;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 11px 16px; transition: border-color 0.2s;
   }
   .player-row:hover { border-color: var(--border2); }
-  .player-num {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-    width: 22px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .player-name {
-    flex: 1;
-    font-weight: 600;
-    font-size: 15px;
-    color: var(--text);
-  }
+  .player-num { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text3); width: 22px; text-align: right; }
+  .player-name { flex: 1; font-weight: 600; font-size: 15px; color: var(--text); }
   .player-stars { display: flex; gap: 2px; }
   .star-s { font-size: 14px; color: var(--text3); }
   .star-s.lit { color: var(--gold); }
   .del-btn {
-    background: none;
-    border: none;
-    color: var(--text3);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    transition: color 0.15s, background 0.15s;
-    line-height: 1;
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 16px; padding: 4px 6px; border-radius: 4px;
+    transition: color 0.15s, background 0.15s; line-height: 1;
   }
   .del-btn:hover { color: var(--danger); background: rgba(208,69,69,0.12); }
-  .empty-msg {
-    text-align: center;
-    color: var(--text3);
-    padding: 32px;
-    font-size: 14px;
-  }
+  .del-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .empty-msg { text-align: center; color: var(--text3); padding: 32px; font-size: 14px; }
 
-  /* --- SORTEIO TAB --- */
+  /* SORTEIO */
   .sorteio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 620px) { .sorteio-grid { grid-template-columns: 1fr; } }
-
-  .select-all-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
+  .select-all-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .select-all-row span { font-size: 13px; color: var(--text2); }
-
   .selectable-list { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
   .selectable-list::-webkit-scrollbar { width: 4px; }
   .selectable-list::-webkit-scrollbar-track { background: var(--bg3); }
   .selectable-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
   .sel-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-    user-select: none;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; user-select: none;
   }
   .sel-row.selected { border-color: var(--accent); background: rgba(232,160,32,0.07); }
   .sel-row:hover:not(.selected) { border-color: var(--border2); }
   .sel-check {
-    width: 18px; height: 18px;
-    border: 1.5px solid var(--border2);
-    border-radius: 3px;
+    width: 18px; height: 18px; border: 1.5px solid var(--border2); border-radius: 3px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: border-color 0.15s, background 0.15s;
+    flex-shrink: 0; transition: border-color 0.15s, background 0.15s;
   }
   .sel-row.selected .sel-check { background: var(--accent); border-color: var(--accent); }
   .sel-check-mark { color: #000; font-size: 11px; font-weight: 700; display: none; }
@@ -308,234 +193,94 @@
   .sel-stars { display: flex; gap: 2px; }
   .star-xs { font-size: 12px; color: var(--text3); }
   .star-xs.lit { color: var(--gold); }
-
   .count-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 13px;
-    color: var(--text2);
-    margin-bottom: 16px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 4px 12px; font-size: 13px; color: var(--text2); margin-bottom: 16px;
   }
   .count-badge b { color: var(--accent); }
-
   .sortear-btn {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-    letter-spacing: 0.1em;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    width: 100%; padding: 14px; font-size: 16px; letter-spacing: 0.1em; margin-top: 4px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
+  .warn-msg {
+    background: rgba(208,69,69,0.1); border: 1px solid rgba(208,69,69,0.3);
+    border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #e07070;
+    margin-bottom: 12px; display: none;
+  }
+  .warn-msg.show { display: block; }
 
-  /* --- RESULTADO --- */
+  /* RESULTADO */
   #resultado { margin-top: 32px; display: none; }
   #resultado.show { display: block; animation: fadein 0.35s ease; }
-
   .result-header {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #fff;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase; color: #fff;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
   }
-  .result-header::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
+  .result-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
   @media (max-width: 540px) { .teams-grid { grid-template-columns: 1fr; } }
-
-  .team-card {
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-  .team-header {
-    padding: 14px 18px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .team-card { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+  .team-header { padding: 14px 18px 12px; display: flex; align-items: center; justify-content: space-between; }
   .team-ct .team-header { background: rgba(74,143,203,0.15); border-bottom: 1px solid rgba(74,143,203,0.3); }
   .team-tr .team-header { background: rgba(224,90,26,0.15); border-bottom: 1px solid rgba(224,90,26,0.3); }
-  .team-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+  .team-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; }
   .team-ct .team-label { color: var(--ct); }
   .team-tr .team-label { color: var(--tr); }
-  .team-rating {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    color: var(--text2);
-  }
+  .team-rating { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text2); }
   .team-rating span { color: var(--gold); font-weight: 600; }
-
   .team-players { background: var(--bg2); }
-  .team-player {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 18px;
-    border-bottom: 1px solid var(--border);
-  }
+  .team-player { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
   .team-player:last-child { border-bottom: none; }
-  .tp-num {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-    width: 16px;
-  }
+  .tp-num { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text3); width: 16px; }
   .tp-name { flex: 1; font-size: 14px; font-weight: 600; }
   .tp-stars { display: flex; gap: 1px; }
   .star-tp { font-size: 11px; color: var(--text3); }
   .star-tp.lit { color: var(--gold); }
-
-  /* MAP CARD */
-  .map-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .map-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    flex-shrink: 0;
-    border: 1px solid var(--border2);
-  }
+  .map-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; display: flex; align-items: center; gap: 20px; }
+  .map-icon { width: 56px; height: 56px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; border: 1px solid var(--border2); }
   .map-info { flex: 1; }
-  .map-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text2);
-    margin-bottom: 4px;
-  }
-  .map-name {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #fff;
-  }
-  .map-pool {
-    font-size: 12px;
-    color: var(--text3);
-    margin-top: 2px;
-  }
+  .map-label { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 4px; }
+  .map-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 0.04em; text-transform: uppercase; color: #fff; }
+  .map-pool { font-size: 12px; color: var(--text3); margin-top: 2px; }
 
-  .warn-msg {
-    background: rgba(208,69,69,0.1);
-    border: 1px solid rgba(208,69,69,0.3);
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #e07070;
-    margin-bottom: 12px;
-    display: none;
-  }
-  .warn-msg.show { display: block; }
-
-  /* spinner */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { display: inline-block; animation: spin 0.7s linear infinite; }
-
-  /* shuffle animation */
-  @keyframes shuffle {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-4px) rotate(-1deg); }
-    75% { transform: translateX(4px) rotate(1deg); }
-  }
-  .shuffling { animation: shuffle 0.15s ease 4; }
-  #map-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-  /* --- LOCK BUTTON --- */
+  /* LOCK BUTTON */
   #lock-btn {
     display: flex; align-items: center; gap: 7px;
-    background: none; border: 1px solid var(--border);
-    border-radius: 5px; cursor: pointer;
+    background: none; border: 1px solid var(--border); border-radius: 5px; cursor: pointer;
     font-family: 'Rajdhani', sans-serif; font-weight: 600;
     font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--text3); padding: 5px 12px;
-    transition: color .2s, border-color .2s, background .2s;
+    color: var(--text3); padding: 5px 12px; transition: color .2s, border-color .2s, background .2s;
   }
   #lock-btn:hover { background: rgba(255,255,255,.04); }
   #lock-btn.admin-on { color: var(--accent); border-color: rgba(232,160,32,.4); }
+  #map-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-  /* --- MODAL --- */
-  #modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.75); z-index: 999;
-    align-items: center; justify-content: center;
-  }
+  /* MODAL */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 999; align-items: center; justify-content: center; }
   #modal-overlay.show { display: flex; animation: fadein .2s ease; }
-  .modal-box {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 32px 30px 28px; width: 340px;
-    box-shadow: 0 24px 60px rgba(0,0,0,.6);
-  }
+  .modal-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 32px 30px 28px; width: 340px; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   .modal-icon { font-size: 28px; margin-bottom: 14px; }
-  .modal-title {
-    font-family: 'Rajdhani', sans-serif; font-weight: 700;
-    font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
-    color: #fff; margin-bottom: 5px;
-  }
+  .modal-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; color: #fff; margin-bottom: 5px; }
   .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 22px; }
-  .modal-label {
-    font-family: 'Rajdhani', sans-serif; font-weight: 600;
-    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--text2); margin-bottom: 6px; display: block;
-  }
-  .modal-inp {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: 6px; color: var(--text);
-    font-family: 'Barlow', sans-serif; font-size: 15px;
-    padding: 10px 14px; outline: none; margin-bottom: 10px;
-    transition: border-color .2s; letter-spacing: .05em;
-  }
+  .modal-label { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; display: block; }
+  .modal-inp { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 15px; padding: 10px 14px; outline: none; margin-bottom: 10px; transition: border-color .2s; letter-spacing: .05em; }
   .modal-inp:focus { border-color: var(--accent); }
-  .modal-err {
-    font-size: 12px; color: #e07070; margin-bottom: 16px; display: none;
-    background: rgba(208,69,69,.1); border: 1px solid rgba(208,69,69,.25);
-    border-radius: 5px; padding: 7px 12px;
-  }
+  .modal-err { font-size: 12px; color: #e07070; margin-bottom: 16px; display: none; background: rgba(208,69,69,.1); border: 1px solid rgba(208,69,69,.25); border-radius: 5px; padding: 7px 12px; }
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions .btn { flex: 1; padding: 10px; text-align: center; align-self: auto; }
   .modal-actions .btn.secondary { flex: none; padding: 10px 16px; }
 </style>
 </head>
 <body>
+
+<div id="loading-bar" class="show"></div>
+
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-txt">Carregando dados...</div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -555,11 +300,10 @@
 
 <main>
 
-  <!-- ===== JOGADORES ===== -->
+  <!-- JOGADORES -->
   <div class="tab-panel active" id="tab-jogadores">
     <div class="sec-title">Jogadores</div>
     <div class="sec-sub">Cadastre os jogadores e defina o nível de habilidade em estrelas.</div>
-
     <div class="card" id="add-card">
       <div class="add-form">
         <div class="field">
@@ -579,21 +323,16 @@
         <button class="btn" id="add-btn">+ Adicionar</button>
       </div>
     </div>
-
     <div class="player-list" id="player-list">
-      <div class="empty-msg">Nenhum jogador cadastrado ainda.</div>
+      <div class="empty-msg">Carregando...</div>
     </div>
   </div>
 
-  <!-- ===== SORTEIO ===== -->
+  <!-- SORTEIO -->
   <div class="tab-panel" id="tab-sorteio">
     <div class="sec-title">Sorteio de Times</div>
     <div class="sec-sub">Selecione os 10 jogadores que vão jogar e clique em Sortear.</div>
-
-    <div class="count-badge">
-      Jogadores selecionados: <b id="sel-count">0</b> / 10
-    </div>
-
+    <div class="count-badge">Jogadores selecionados: <b id="sel-count">0</b> / 10</div>
     <div class="sorteio-grid">
       <div>
         <div class="select-all-row">
@@ -601,34 +340,27 @@
           <button class="btn secondary" id="clear-sel" style="padding:5px 12px;font-size:12px;">Limpar</button>
         </div>
         <div class="selectable-list" id="selectable-list">
-          <div class="empty-msg">Nenhum jogador cadastrado.</div>
+          <div class="empty-msg">Carregando...</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;justify-content:space-between;">
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);">Mapas disponíveis</div>
-            <button id="map-edit-btn" style="
-              background:none;border:1px solid var(--border2);border-radius:4px;
-              color:var(--text2);font-family:'Rajdhani',sans-serif;font-weight:600;
-              font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-              cursor:pointer;padding:3px 10px;transition:color .15s,border-color .15s;">✎ Editar</button>
+            <button id="map-edit-btn" style="background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text2);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:3px 10px;transition:color .15s,border-color .15s;">✎ Editar</button>
           </div>
           <div id="map-pool-container" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         </div>
         <div style="margin-top:20px;">
           <div class="warn-msg" id="warn-msg"></div>
-          <button class="btn sortear-btn" id="sortear-btn">
-            <span>&#9670;</span> Sortear Times &amp; Mapa
-          </button>
+          <button class="btn sortear-btn" id="sortear-btn"><span>&#9670;</span> Sortear Times &amp; Mapa</button>
         </div>
       </div>
     </div>
 
     <div id="resultado">
       <div class="result-header">Resultado do Sorteio</div>
-
-      <div class="map-card" style="margin-bottom:16px;" id="map-result">
+      <div class="map-card" style="margin-bottom:16px;">
         <div class="map-icon" id="map-icon">🗺️</div>
         <div class="map-info">
           <div class="map-label">Mapa sorteado</div>
@@ -636,7 +368,6 @@
           <div class="map-pool" id="map-desc"></div>
         </div>
       </div>
-
       <div class="teams-grid">
         <div class="team-card team-ct">
           <div class="team-header">
@@ -653,18 +384,15 @@
           <div class="team-players" id="tr-players"></div>
         </div>
       </div>
-
       <div style="text-align:center;margin-top:8px;">
-        <button class="btn secondary" id="ressortear-btn" style="gap:8px;display:inline-flex;align-items:center;">
-          ↺ Novo Sorteio
-        </button>
+        <button class="btn secondary" id="ressortear-btn" style="gap:8px;display:inline-flex;align-items:center;">↺ Novo Sorteio</button>
       </div>
     </div>
   </div>
 
 </main>
 
-<!-- MODAL LOGIN ADMIN -->
+<!-- MODAL ADMIN -->
 <div id="modal-overlay">
   <div class="modal-box">
     <div class="modal-icon">🔐</div>
@@ -681,15 +409,73 @@
 </div>
 
 <script>
-const ADMIN_PASS = 'CSZADA'; // ← altere aqui para mudar a senha
+const ADMIN_PASS    = 'CSZADA';
+const SUPABASE_URL  = 'https://jtrhojcznxsxmakrtqrx.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0cmhvamN6bnhzeG1ha3J0cXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MDExMjQsImV4cCI6MjA5NDM3NzEyNH0.yGjYbUCv0E2hscZQKN5Vr0N6CwOHkc4j46m9uX1cmlo';
 
-let players = JSON.parse(localStorage.getItem('cs2_players') || '[]');
-let isAdmin  = sessionStorage.getItem('cs2_admin') === '1';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let players      = [];
+let maps         = [];
+let isAdmin      = sessionStorage.getItem('cs2_admin') === '1';
 let selectedStars = 3;
-let selectedIds   = new Set();
+let selectedIds  = new Set();
+let mapsEditMode = false;
 
-function save() { localStorage.setItem('cs2_players', JSON.stringify(players)); }
-function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+const DEFAULT_MAPS = [
+  { name:'Mirage',   emoji:'🏜️', descricao:'Mapa clássico e equilibrado' },
+  { name:'Inferno',  emoji:'🌋', descricao:'Ruas estreitas e muita pressão' },
+  { name:'Dust2',    emoji:'🏛️', descricao:'O mapa mais icônico do CS' },
+  { name:'Nuke',     emoji:'☢️', descricao:'Complexidade vertical única' },
+  { name:'Ancient',  emoji:'🗿', descricao:'Ruínas com muitos ângulos' },
+  { name:'Anubis',   emoji:'⚱️', descricao:'Temática egípcia, mid importante' },
+  { name:'Vertigo',  emoji:'🏗️', descricao:'Luta nos andares mais altos' },
+  { name:'Train',    emoji:'🚂', descricao:'Clássico retornando ao pool' },
+  { name:'Cache',    emoji:'☣️', descricao:'Favorito da comunidade' },
+  { name:'Overpass', emoji:'🌉', descricao:'Água e muitas opções táticas' },
+];
+
+/* ---- LOADING ---- */
+function setLoading(on) {
+  document.getElementById('loading-bar').classList.toggle('show', on);
+  document.getElementById('loading-overlay').classList.toggle('hidden', !on);
+}
+
+/* ---- SUPABASE OPS ---- */
+async function loadPlayers() {
+  const { data } = await db.from('cs2_jogadores').select('*').order('stars', { ascending: false }).order('created_at');
+  players = data || [];
+}
+
+async function loadMaps() {
+  const { data } = await db.from('cs2_mapas').select('*').order('created_at');
+  maps = data || [];
+}
+
+async function dbAddPlayer(name, stars) {
+  const { data, error } = await db.from('cs2_jogadores').insert({ name, stars }).select().single();
+  if (!error && data) { players = [...players, data].sort((a,b) => b.stars - a.stars); return true; }
+  return false;
+}
+
+async function dbDeletePlayer(id) {
+  const { error } = await db.from('cs2_jogadores').delete().eq('id', id);
+  if (!error) { players = players.filter(p => p.id !== id); return true; }
+  return false;
+}
+
+async function dbAddMap(name, emoji, descricao) {
+  const { data, error } = await db.from('cs2_mapas').insert({ name, emoji, descricao }).select().single();
+  if (!error && data) { maps = [...maps, data]; return true; }
+  return false;
+}
+
+async function dbDeleteMap(id) {
+  const { error } = await db.from('cs2_mapas').delete().eq('id', id);
+  if (!error) { maps = maps.filter(m => m.id !== id); return true; }
+  return false;
+}
 
 /* ---- ADMIN ---- */
 function updateAdminUI() {
@@ -717,15 +503,11 @@ function openLoginModal() {
   document.getElementById('modal-err').style.display = 'none';
   setTimeout(() => document.getElementById('modal-pass').focus(), 120);
 }
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('show');
-}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
 function doLogin() {
   if (document.getElementById('modal-pass').value === ADMIN_PASS) {
-    isAdmin = true;
-    sessionStorage.setItem('cs2_admin', '1');
-    closeModal();
-    updateAdminUI();
+    isAdmin = true; sessionStorage.setItem('cs2_admin','1');
+    closeModal(); updateAdminUI();
   } else {
     document.getElementById('modal-err').style.display = 'block';
     document.getElementById('modal-pass').value = '';
@@ -734,120 +516,80 @@ function doLogin() {
 }
 function doLogout() {
   isAdmin = false; mapsEditMode = false;
-  sessionStorage.removeItem('cs2_admin');
-  updateAdminUI();
+  sessionStorage.removeItem('cs2_admin'); updateAdminUI();
 }
 
-document.getElementById('lock-btn').addEventListener('click', () => {
-  if (isAdmin) doLogout(); else openLoginModal();
-});
-document.getElementById('modal-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
-});
+document.getElementById('lock-btn').addEventListener('click', () => { if (isAdmin) doLogout(); else openLoginModal(); });
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
 document.getElementById('modal-login-btn').addEventListener('click', doLogin);
 document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
-document.getElementById('modal-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-  if (e.key === 'Escape') closeModal();
-});
+document.getElementById('modal-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); if (e.key==='Escape') closeModal(); });
 
 /* ---- STAR INPUT ---- */
 const starsInput = document.getElementById('stars-input');
 function setStars(v) {
   selectedStars = v;
-  starsInput.querySelectorAll('.star-btn').forEach(b => {
-    b.classList.toggle('lit', parseInt(b.dataset.v) <= v);
-  });
+  starsInput.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('lit', parseInt(b.dataset.v) <= v));
 }
 setStars(3);
-starsInput.querySelectorAll('.star-btn').forEach(b => {
-  b.addEventListener('click', () => setStars(parseInt(b.dataset.v)));
-});
+starsInput.querySelectorAll('.star-btn').forEach(b => b.addEventListener('click', () => setStars(parseInt(b.dataset.v))));
 
 /* ---- ADD PLAYER ---- */
-document.getElementById('add-btn').addEventListener('click', () => {
+document.getElementById('add-btn').addEventListener('click', async () => {
   if (!isAdmin) return;
   const nome = document.getElementById('inp-nome').value.trim();
   if (!nome) { document.getElementById('inp-nome').focus(); return; }
-  players.push({ id: genId(), name: nome, stars: selectedStars });
-  save();
-  document.getElementById('inp-nome').value = '';
-  renderPlayers();
-  renderSelectable();
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = '...';
+  const ok = await dbAddPlayer(nome, selectedStars);
+  btn.disabled = false; btn.textContent = '+ Adicionar';
+  if (ok) { document.getElementById('inp-nome').value = ''; renderPlayers(); renderSelectable(); }
 });
-document.getElementById('inp-nome').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('add-btn').click();
-});
+document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('add-btn').click(); });
 
 /* ---- RENDER STARS ---- */
 function renderStars(n, cls) {
   let s = '';
-  for (let i = 1; i <= 5; i++)
-    s += `<span class="${cls}${i <= n ? ' lit' : ''}">&#9733;</span>`;
+  for (let i = 1; i <= 5; i++) s += `<span class="${cls}${i<=n?' lit':''}">&#9733;</span>`;
   return s;
 }
 
-/* ---- RENDER PLAYER LIST ---- */
+/* ---- RENDER PLAYERS ---- */
 function renderPlayers() {
   const el = document.getElementById('player-list');
-  if (!players.length) {
-    el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado ainda.</div>';
-    return;
-  }
-  const sorted = [...players].sort((a, b) => b.stars - a.stars);
-  el.innerHTML = sorted.map((p, i) => `
+  if (!players.length) { el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado ainda.</div>'; return; }
+  el.innerHTML = players.map((p,i) => `
     <div class="player-row">
       <span class="player-num">${String(i+1).padStart(2,'0')}</span>
       <span class="player-name">${esc(p.name)}</span>
-      <div class="player-stars">${renderStars(p.stars, 'star-s')}</div>
+      <div class="player-stars">${renderStars(p.stars,'star-s')}</div>
       ${isAdmin ? `<button class="del-btn" data-id="${p.id}" title="Remover">&#10005;</button>` : ''}
     </div>`).join('');
   el.querySelectorAll('.del-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      players = players.filter(p => p.id !== b.dataset.id);
-      selectedIds.delete(b.dataset.id);
-      save(); renderPlayers(); renderSelectable(); updateCount();
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      const ok = await dbDeletePlayer(b.dataset.id);
+      if (ok) { selectedIds.delete(b.dataset.id); renderPlayers(); renderSelectable(); updateCount(); }
+      else b.disabled = false;
     });
   });
 }
 
-/* ---- MAPS ---- */
-const DEFAULT_MAPS = [
-  { name: 'Mirage',   emoji: '🏜️', desc: 'Mapa clássico e equilibrado' },
-  { name: 'Inferno',  emoji: '🌋', desc: 'Ruas estreitas e muita pressão' },
-  { name: 'Dust2',    emoji: '🏛️', desc: 'O mapa mais icônico do CS' },
-  { name: 'Nuke',     emoji: '☢️', desc: 'Complexidade vertical única' },
-  { name: 'Ancient',  emoji: '🗿', desc: 'Ruínas com muitos ângulos' },
-  { name: 'Anubis',   emoji: '⚱️', desc: 'Temática egípcia, mid importante' },
-  { name: 'Vertigo',  emoji: '🏗️', desc: 'Luta nos andares mais altos' },
-  { name: 'Train',    emoji: '🚂', desc: 'Clássico retornando ao pool' },
-  { name: 'Cache',    emoji: '☣️', desc: 'Favorito da comunidade' },
-  { name: 'Overpass', emoji: '🌉', desc: 'Água e muitas opções táticas' },
-];
-let maps = JSON.parse(localStorage.getItem('cs2_maps') || 'null') || DEFAULT_MAPS;
-let mapsEditMode = false;
-function saveMaps() { localStorage.setItem('cs2_maps', JSON.stringify(maps)); }
-
 /* ---- RENDER SELECTABLE ---- */
 function renderSelectable() {
   const el = document.getElementById('selectable-list');
-  if (!players.length) {
-    el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado.</div>';
-    return;
-  }
-  const sorted = [...players].sort((a, b) => b.stars - a.stars);
-  el.innerHTML = sorted.map(p => `
-    <div class="sel-row${selectedIds.has(p.id) ? ' selected' : ''}" data-id="${p.id}">
+  if (!players.length) { el.innerHTML = '<div class="empty-msg">Nenhum jogador cadastrado.</div>'; return; }
+  el.innerHTML = players.map(p => `
+    <div class="sel-row${selectedIds.has(p.id)?' selected':''}" data-id="${p.id}">
       <div class="sel-check"><span class="sel-check-mark">&#10003;</span></div>
       <span class="sel-name">${esc(p.name)}</span>
-      <div class="sel-stars">${renderStars(p.stars, 'star-xs')}</div>
+      <div class="sel-stars">${renderStars(p.stars,'star-xs')}</div>
     </div>`).join('');
   el.querySelectorAll('.sel-row').forEach(row => {
     row.addEventListener('click', () => {
       const id = row.dataset.id;
-      if (selectedIds.has(id)) {
-        selectedIds.delete(id); row.classList.remove('selected');
-      } else {
+      if (selectedIds.has(id)) { selectedIds.delete(id); row.classList.remove('selected'); }
+      else {
         if (selectedIds.size >= 10) { showWarn('Máximo de 10 jogadores selecionados.'); return; }
         selectedIds.add(id); row.classList.add('selected');
       }
@@ -864,56 +606,55 @@ function renderMapPool() {
 
   if (!isAdmin || !mapsEditMode) {
     container.innerHTML = maps.map(m => `
-      <span style="display:inline-flex;align-items:center;gap:5px;
-        background:var(--bg3);border:1px solid var(--border);
-        border-radius:20px;padding:3px 10px;font-size:12px;color:var(--text2);">
+      <span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--text2);">
         ${m.emoji} ${m.name}
       </span>`).join('');
   } else {
     container.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
-        ${maps.map((m, i) => `
-          <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);
-            border:1px solid var(--border);border-radius:6px;padding:7px 12px;">
+        ${maps.map(m => `
+          <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;">
             <span style="font-size:18px;flex-shrink:0;">${m.emoji}</span>
             <span style="flex:1;font-size:13px;font-weight:600;color:var(--text);">${esc(m.name)}</span>
-            <button class="del-map-btn" data-i="${i}" style="
-              background:none;border:none;color:var(--text3);cursor:pointer;
-              font-size:14px;padding:2px 6px;border-radius:4px;line-height:1;">&#10005;</button>
+            <button class="del-map-btn" data-id="${m.id}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1;">&#10005;</button>
           </div>`).join('')}
         <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
           <input id="inp-map-emoji" type="text" placeholder="🗺️" maxlength="4"
-            style="width:54px;background:var(--bg3);border:1px solid var(--border2);
-            border-radius:5px;color:var(--text);font-size:18px;padding:6px 8px;outline:none;text-align:center;">
+            style="width:54px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:18px;padding:6px 8px;outline:none;text-align:center;">
           <input id="inp-map-name" type="text" placeholder="Nome do mapa" maxlength="24"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);
-            border-radius:5px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 11px;outline:none;">
-          <button id="add-map-btn" style="
-            background:var(--accent);border:none;border-radius:5px;color:#000;
-            font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;
-            letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:8px 14px;white-space:nowrap;">+ Mapa</button>
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 11px;outline:none;">
+          <button id="add-map-btn" style="background:var(--accent);border:none;border-radius:5px;color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:8px 14px;white-space:nowrap;">+ Mapa</button>
         </div>
       </div>`;
 
     container.querySelectorAll('.del-map-btn').forEach(b => {
       b.addEventListener('mouseover', () => { b.style.color='var(--danger)'; b.style.background='rgba(208,69,69,0.12)'; });
       b.addEventListener('mouseout',  () => { b.style.color='var(--text3)';  b.style.background='none'; });
-      b.addEventListener('click', () => { maps.splice(parseInt(b.dataset.i), 1); saveMaps(); renderMapPool(); });
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await dbDeleteMap(b.dataset.id);
+        renderMapPool();
+      });
     });
 
     const addMapBtn = document.getElementById('add-map-btn');
     const inpName   = document.getElementById('inp-map-name');
     const inpEmoji  = document.getElementById('inp-map-emoji');
-    function doAddMap() {
+
+    async function doAddMap() {
       const name  = inpName.value.trim();
       const emoji = inpEmoji.value.trim() || '🗺️';
       if (!name) { inpName.focus(); return; }
-      maps.push({ name, emoji, desc: '' }); saveMaps();
-      inpName.value = ''; inpEmoji.value = ''; renderMapPool();
-      setTimeout(() => { document.getElementById('inp-map-name') && document.getElementById('inp-map-name').focus(); }, 50);
+      addMapBtn.disabled = true; addMapBtn.textContent = '...';
+      const ok = await dbAddMap(name, emoji, '');
+      addMapBtn.disabled = false; addMapBtn.textContent = '+ Mapa';
+      if (ok) {
+        inpName.value = ''; inpEmoji.value = ''; renderMapPool();
+        setTimeout(() => { const el = document.getElementById('inp-map-name'); if (el) el.focus(); }, 50);
+      }
     }
     addMapBtn.addEventListener('click', doAddMap);
-    inpName.addEventListener('keydown', e => { if (e.key === 'Enter') doAddMap(); });
+    inpName.addEventListener('keydown', e => { if (e.key==='Enter') doAddMap(); });
     inpEmoji.addEventListener('focus', () => { inpEmoji.style.borderColor='var(--accent)'; });
     inpEmoji.addEventListener('blur',  () => { inpEmoji.style.borderColor='var(--border2)'; });
     inpName.addEventListener('focus',  () => { inpName.style.borderColor='var(--accent)'; });
@@ -927,13 +668,10 @@ document.getElementById('map-edit-btn').addEventListener('click', () => {
   renderMapPool();
 });
 
-/* ---- UPDATE COUNT ---- */
+/* ---- COUNT ---- */
 function updateCount() {
   document.getElementById('sel-count').textContent = selectedIds.size;
-  if (selectedIds.size === 10) {
-    const w = document.getElementById('warn-msg');
-    w.textContent = ''; w.classList.remove('show');
-  }
+  if (selectedIds.size === 10) { const w = document.getElementById('warn-msg'); w.textContent=''; w.classList.remove('show'); }
 }
 function showWarn(msg) {
   const w = document.getElementById('warn-msg');
@@ -941,7 +679,7 @@ function showWarn(msg) {
   setTimeout(() => w.classList.remove('show'), 3000);
 }
 
-/* ---- CLEAR SELECTION ---- */
+/* ---- CLEAR ---- */
 document.getElementById('clear-sel').addEventListener('click', () => {
   selectedIds.clear(); renderSelectable(); updateCount();
   document.getElementById('resultado').classList.remove('show');
@@ -952,45 +690,33 @@ document.getElementById('sortear-btn').addEventListener('click', sortear);
 document.getElementById('ressortear-btn').addEventListener('click', sortear);
 
 function sortear() {
-  if (selectedIds.size !== 10) {
-    showWarn(`Selecione exatamente 10 jogadores (${selectedIds.size} selecionados).`);
-    return;
-  }
+  if (selectedIds.size !== 10) { showWarn(`Selecione exatamente 10 jogadores (${selectedIds.size} selecionados).`); return; }
   if (!maps.length) { showWarn('Nenhum mapa cadastrado.'); return; }
 
   const pool    = players.filter(p => selectedIds.has(p.id));
-  const byStars = [...pool].sort((a, b) => b.stars - a.stars);
+  const byStars = [...pool].sort((a,b) => b.stars - a.stars);
   const order   = [0,1,1,0,0,1,1,0,0,1];
   const ct = [], tr = [];
-  byStars.forEach((p, i) => { if (order[i] === 0) ct.push(p); else tr.push(p); });
-  ct.sort(() => Math.random() - 0.5);
-  tr.sort(() => Math.random() - 0.5);
+  byStars.forEach((p,i) => { if (order[i]===0) ct.push(p); else tr.push(p); });
+  ct.sort(() => Math.random()-.5);
+  tr.sort(() => Math.random()-.5);
 
-  const map = maps[Math.floor(Math.random() * maps.length)];
+  const map = maps[Math.floor(Math.random()*maps.length)];
   document.getElementById('map-icon').textContent  = map.emoji;
   document.getElementById('map-name').textContent  = map.name;
-  document.getElementById('map-desc').textContent  = map.desc;
-  document.getElementById('ct-rating').textContent = ct.reduce((a,p) => a + p.stars, 0);
-  document.getElementById('tr-rating').textContent = tr.reduce((a,p) => a + p.stars, 0);
+  document.getElementById('map-desc').textContent  = map.descricao || '';
+  document.getElementById('ct-rating').textContent = ct.reduce((a,p)=>a+p.stars,0);
+  document.getElementById('tr-rating').textContent = tr.reduce((a,p)=>a+p.stars,0);
 
-  document.getElementById('ct-players').innerHTML = ct.map((p, i) => `
-    <div class="team-player">
-      <span class="tp-num">${i+1}</span>
-      <span class="tp-name">${esc(p.name)}</span>
-      <div class="tp-stars">${renderStars(p.stars, 'star-tp')}</div>
-    </div>`).join('');
-
-  document.getElementById('tr-players').innerHTML = tr.map((p, i) => `
-    <div class="team-player">
-      <span class="tp-num">${i+1}</span>
-      <span class="tp-name">${esc(p.name)}</span>
-      <div class="tp-stars">${renderStars(p.stars, 'star-tp')}</div>
-    </div>`).join('');
+  document.getElementById('ct-players').innerHTML = ct.map((p,i) => `
+    <div class="team-player"><span class="tp-num">${i+1}</span><span class="tp-name">${esc(p.name)}</span><div class="tp-stars">${renderStars(p.stars,'star-tp')}</div></div>`).join('');
+  document.getElementById('tr-players').innerHTML = tr.map((p,i) => `
+    <div class="team-player"><span class="tp-num">${i+1}</span><span class="tp-name">${esc(p.name)}</span><div class="tp-stars">${renderStars(p.stars,'star-tp')}</div></div>`).join('');
 
   const res = document.getElementById('resultado');
   res.classList.remove('show'); void res.offsetWidth;
   res.classList.add('show');
-  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  res.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 /* ---- TABS ---- */
@@ -999,24 +725,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'sorteio') {
-      mapsEditMode = false;
-      renderSelectable(); renderMapPool(); updateCount();
-    }
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab==='sorteio') { mapsEditMode=false; renderSelectable(); renderMapPool(); updateCount(); }
   });
 });
 
 /* ---- UTIL ---- */
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ---- INIT ---- */
-updateAdminUI();
-renderSelectable();
-renderMapPool();
-updateCount();
+async function init() {
+  setLoading(true);
+  await Promise.all([loadPlayers(), loadMaps()]);
+
+  if (maps.length === 0) {
+    for (const m of DEFAULT_MAPS) await dbAddMap(m.name, m.emoji, m.descricao);
+  }
+
+  setLoading(false);
+  updateAdminUI();
+  renderSelectable();
+  renderMapPool();
+  updateCount();
+}
+
+init();
 </script>
 </body>
 </html>
