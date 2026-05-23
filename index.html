@@ -455,26 +455,28 @@ async function loadMaps() {
 
 async function dbAddPlayer(name, stars) {
   const { data, error } = await db.from('cs2_jogadores').insert({ name, stars }).select().single();
-  if (!error && data) { players = [...players, data].sort((a,b) => b.stars - a.stars); return true; }
-  return false;
+  if (error) { console.error('dbAddPlayer:', error); return { ok: false, msg: error.message }; }
+  players = [...players, data].sort((a,b) => b.stars - a.stars);
+  return { ok: true };
 }
 
 async function dbDeletePlayer(id) {
   const { error } = await db.from('cs2_jogadores').delete().eq('id', id);
-  if (!error) { players = players.filter(p => p.id !== id); return true; }
-  return false;
+  if (error) { console.error('dbDeletePlayer:', error); return false; }
+  players = players.filter(p => p.id !== id); return true;
 }
 
 async function dbAddMap(name, emoji, descricao) {
   const { data, error } = await db.from('cs2_mapas').insert({ name, emoji, descricao }).select().single();
-  if (!error && data) { maps = [...maps, data]; return true; }
-  return false;
+  if (error) { console.error('dbAddMap:', error); return { ok: false, msg: error.message }; }
+  maps = [...maps, data];
+  return { ok: true };
 }
 
 async function dbDeleteMap(id) {
   const { error } = await db.from('cs2_mapas').delete().eq('id', id);
-  if (!error) { maps = maps.filter(m => m.id !== id); return true; }
-  return false;
+  if (error) { console.error('dbDeleteMap:', error); return false; }
+  maps = maps.filter(m => m.id !== id); return true;
 }
 
 /* ---- ADMIN ---- */
@@ -541,9 +543,10 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   if (!nome) { document.getElementById('inp-nome').focus(); return; }
   const btn = document.getElementById('add-btn');
   btn.disabled = true; btn.textContent = '...';
-  const ok = await dbAddPlayer(nome, selectedStars);
+  const res = await dbAddPlayer(nome, selectedStars);
   btn.disabled = false; btn.textContent = '+ Adicionar';
-  if (ok) { document.getElementById('inp-nome').value = ''; renderPlayers(); renderSelectable(); }
+  if (res.ok) { document.getElementById('inp-nome').value = ''; renderPlayers(); renderSelectable(); }
+  else showWarn('Erro ao salvar: ' + (res.msg || 'verifique o Supabase'));
 });
 document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('add-btn').click(); });
 
@@ -646,11 +649,13 @@ function renderMapPool() {
       const emoji = inpEmoji.value.trim() || '🗺️';
       if (!name) { inpName.focus(); return; }
       addMapBtn.disabled = true; addMapBtn.textContent = '...';
-      const ok = await dbAddMap(name, emoji, '');
+      const res = await dbAddMap(name, emoji, '');
       addMapBtn.disabled = false; addMapBtn.textContent = '+ Mapa';
-      if (ok) {
+      if (res.ok) {
         inpName.value = ''; inpEmoji.value = ''; renderMapPool();
         setTimeout(() => { const el = document.getElementById('inp-map-name'); if (el) el.focus(); }, 50);
+      } else {
+        showWarn('Erro ao salvar mapa: ' + (res.msg || 'verifique o Supabase'));
       }
     }
     addMapBtn.addEventListener('click', doAddMap);
@@ -736,10 +741,28 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 /* ---- INIT ---- */
 async function init() {
   setLoading(true);
-  await Promise.all([loadPlayers(), loadMaps()]);
+
+  const [rP, rM] = await Promise.all([
+    db.from('cs2_jogadores').select('*').order('stars', { ascending: false }).order('created_at'),
+    db.from('cs2_mapas').select('*').order('created_at')
+  ]);
+
+  if (rP.error) {
+    console.error('Erro ao carregar jogadores:', rP.error);
+    setLoading(false);
+    document.getElementById('player-list').innerHTML =
+      `<div class="empty-msg" style="color:#e07070;">Erro ao conectar ao banco: ${rP.error.message}</div>`;
+    return;
+  }
+
+  players = rP.data || [];
+  maps    = rM.data || [];
 
   if (maps.length === 0) {
-    for (const m of DEFAULT_MAPS) await dbAddMap(m.name, m.emoji, m.descricao);
+    for (const m of DEFAULT_MAPS) {
+      const res = await dbAddMap(m.name, m.emoji, m.descricao);
+      if (!res.ok) { console.error('Erro ao inserir mapa padrão:', m.name, res.msg); }
+    }
   }
 
   setLoading(false);
