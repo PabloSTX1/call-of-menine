@@ -270,6 +270,18 @@
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions .btn { flex: 1; padding: 10px; text-align: center; align-self: auto; }
   .modal-actions .btn.secondary { flex: none; padding: 10px 16px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--bg4); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 12px 20px; font-size: 13px;
+    color: var(--text); max-width: 80vw; text-align: center;
+    z-index: 9999; display: none; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    white-space: pre-wrap; word-break: break-all;
+  }
+  #toast.show { display: block; animation: fadein .2s ease; }
+  #toast.err  { border-color: rgba(208,69,69,.5); color: #e07070; background: rgba(208,69,69,.15); }
 </style>
 </head>
 <body>
@@ -390,6 +402,9 @@
   </div>
 
 </main>
+
+<!-- TOAST -->
+<div id="toast"></div>
 
 <!-- MODAL ADMIN -->
 <div id="modal-overlay">
@@ -563,8 +578,8 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = '...';
   const res = await dbAddPlayer(nome, selectedStars);
   btn.disabled = false; btn.textContent = '+ Adicionar';
-  if (res.ok) { document.getElementById('inp-nome').value = ''; renderPlayers(); renderSelectable(); }
-  else showWarn('Erro ao salvar: ' + (res.msg || 'verifique o Supabase'));
+  if (res.ok) { document.getElementById('inp-nome').value = ''; renderPlayers(); renderSelectable(); showToast('Jogador adicionado!'); }
+  else showToast('Erro ao salvar jogador: ' + (res.msg || 'sem detalhe'), true);
 });
 document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('add-btn').click(); });
 
@@ -671,9 +686,10 @@ function renderMapPool() {
       addMapBtn.disabled = false; addMapBtn.textContent = '+ Mapa';
       if (res.ok) {
         inpName.value = ''; inpEmoji.value = ''; renderMapPool();
+        showToast('Mapa adicionado!');
         setTimeout(() => { const el = document.getElementById('inp-map-name'); if (el) el.focus(); }, 50);
       } else {
-        showWarn('Erro ao salvar mapa: ' + (res.msg || 'verifique o Supabase'));
+        showToast('Erro ao salvar mapa: ' + (res.msg || 'sem detalhe'), true);
       }
     }
     addMapBtn.addEventListener('click', doAddMap);
@@ -691,15 +707,25 @@ document.getElementById('map-edit-btn').addEventListener('click', () => {
   renderMapPool();
 });
 
-/* ---- COUNT ---- */
-function updateCount() {
-  document.getElementById('sel-count').textContent = selectedIds.size;
-  if (selectedIds.size === 10) { const w = document.getElementById('warn-msg'); w.textContent=''; w.classList.remove('show'); }
+/* ---- NOTIFICATIONS ---- */
+let _toastTimer = null;
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, isErr ? 6000 : 3000);
 }
 function showWarn(msg) {
   const w = document.getElementById('warn-msg');
-  w.textContent = msg; w.classList.add('show');
-  setTimeout(() => w.classList.remove('show'), 3000);
+  if (w) { w.textContent = msg; w.classList.add('show'); setTimeout(() => w.classList.remove('show'), 3000); }
+  showToast(msg, true);
+}
+
+/* ---- COUNT ---- */
+function updateCount() {
+  document.getElementById('sel-count').textContent = selectedIds.size;
+  if (selectedIds.size === 10) { const w = document.getElementById('warn-msg'); if(w){w.textContent=''; w.classList.remove('show');} }
 }
 
 /* ---- CLEAR ---- */
@@ -765,7 +791,7 @@ async function init() {
     console.error('Erro ao carregar dados:', e);
     setLoading(false);
     document.getElementById('player-list').innerHTML =
-      '<div class="empty-msg" style="color:#e07070;">Erro ao conectar ao banco: ' + (e.msg || e.message || 'verifique o Supabase') + '</div>';
+      '<div class="empty-msg" style="color:#e07070;">Erro: ' + (e.msg || e.message || JSON.stringify(e)) + '</div>';
     return;
   }
 
