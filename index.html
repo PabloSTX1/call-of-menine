@@ -259,6 +259,9 @@
   #lock-btn:hover { background: rgba(255,255,255,.04); }
   #lock-btn.admin-on { color: var(--accent); border-color: rgba(232,160,32,.4); }
   #map-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+  #toggle-site-btn:hover { background: rgba(255,255,255,.04); }
+  #toggle-site-btn.online { color: #3cb87a; border-color: rgba(60,184,122,.4); }
+  #toggle-site-btn.offline { color: var(--danger); border-color: rgba(208,69,69,.4); }
 
   /* MODAL */
   #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 999; align-items: center; justify-content: center; }
@@ -321,6 +324,13 @@
         <button class="tab-btn active" data-tab="jogadores">&#9670; Jogadores</button>
         <button class="tab-btn" data-tab="sorteio">&#9670; Sorteio</button>
       </nav>
+      <button id="toggle-site-btn" title="Ativar/desativar site" style="display:none;
+        background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;
+        font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;
+        letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:5px 12px;
+        transition:color .2s,border-color .2s,background .2s;align-items:center;gap:7px;">
+        ⏸ Site
+      </button>
       <button id="lock-btn" title="Acesso administrativo">🔒 <span>Admin</span></button>
     </div>
   </div>
@@ -429,6 +439,17 @@
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- OFFLINE OVERLAY -->
+<div id="offline-overlay" style="display:none;position:fixed;inset:0;z-index:800;background:#08090b;
+  align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <div style="font-size:56px;">🔒</div>
+  <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:32px;
+    letter-spacing:.08em;text-transform:uppercase;color:#fff;">Site Desativado</div>
+  <div style="font-size:14px;color:#545a68;text-align:center;max-width:320px;line-height:1.6;">
+    O sorteio está temporariamente indisponível.<br>Volte em breve!
+  </div>
+</div>
+
 <!-- MODAL ADMIN -->
 <div id="modal-overlay">
   <div class="modal-box">
@@ -464,6 +485,7 @@ let isAdmin      = sessionStorage.getItem('cs2_admin') === '1';
 let selectedStars = 3;
 let selectedIds  = new Set();
 let mapsEditMode = false;
+let siteAtivo    = true;
 
 const DEFAULT_MAPS = [
   { name:'Mirage',   emoji:'🏜️', descricao:'Mapa clássico e equilibrado' },
@@ -501,6 +523,25 @@ async function loadPlayers() {
 async function loadMaps() {
   const data = await apiFetch('/cs2_mapas?select=*&order=created_at.asc');
   maps = data || [];
+}
+
+async function loadConfig() {
+  try {
+    const data = await apiFetch('/cs2_config?select=*&limit=1');
+    if (data && data[0]) siteAtivo = data[0].site_ativo;
+  } catch(e) { console.error('loadConfig:', e); }
+}
+
+async function dbSetSiteAtivo(val) {
+  try {
+    await apiFetch('/cs2_config?id=eq.1', {
+      method: 'PATCH',
+      headers: { 'Prefer': '' },
+      body: JSON.stringify({ site_ativo: val })
+    });
+    siteAtivo = val;
+    return true;
+  } catch(e) { console.error('dbSetSiteAtivo:', e); return false; }
 }
 
 async function dbAddPlayer(name, stars) {
@@ -567,7 +608,42 @@ function updateAdminUI() {
   }
   renderPlayers();
   if (document.getElementById('map-pool-container')) renderMapPool();
+  updateSiteUI();
 }
+
+function updateSiteUI() {
+  const overlay = document.getElementById('offline-overlay');
+  const toggleBtn = document.getElementById('toggle-site-btn');
+
+  if (!isAdmin && !siteAtivo) {
+    overlay.style.display = 'flex';
+  } else {
+    overlay.style.display = 'none';
+  }
+
+  if (isAdmin) {
+    toggleBtn.style.display = 'inline-flex';
+    if (siteAtivo) {
+      toggleBtn.innerHTML = '✅ Online';
+      toggleBtn.className = 'online';
+    } else {
+      toggleBtn.innerHTML = '⛔ Offline';
+      toggleBtn.className = 'offline';
+    }
+  } else {
+    toggleBtn.style.display = 'none';
+  }
+}
+
+document.getElementById('toggle-site-btn').addEventListener('click', async () => {
+  if (!isAdmin) return;
+  const btn = document.getElementById('toggle-site-btn');
+  btn.disabled = true;
+  const ok = await dbSetSiteAtivo(!siteAtivo);
+  btn.disabled = false;
+  if (ok) { updateSiteUI(); showToast(siteAtivo ? 'Site ativado!' : 'Site desativado!'); }
+  else showToast('Erro ao alterar status do site', true);
+});
 
 function openLoginModal() {
   document.getElementById('modal-overlay').classList.add('show');
@@ -1039,7 +1115,7 @@ document.getElementById('copy-result-btn').addEventListener('click', copyResultI
 async function init() {
   setLoading(true);
   try {
-    await Promise.all([loadPlayers(), loadMaps()]);
+    await Promise.all([loadPlayers(), loadMaps(), loadConfig()]);
   } catch(e) {
     console.error('Erro ao carregar dados:', e);
     setLoading(false);
@@ -1057,6 +1133,7 @@ async function init() {
 
   setLoading(false);
   updateAdminUI();
+  updateSiteUI();
   renderSelectable();
   renderMapPool();
   updateCount();
