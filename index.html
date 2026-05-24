@@ -275,6 +275,19 @@
   .modal-actions .btn { flex: 1; padding: 10px; text-align: center; align-self: auto; }
   .modal-actions .btn.secondary { flex: none; padding: 10px 16px; }
 
+  /* COPY BTN */
+  #copy-result-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 5px; color: var(--text2);
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
+    cursor: pointer; padding: 9px 18px;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+  #copy-result-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(232,160,32,.06); }
+  #copy-result-btn.copied { color: var(--success, #3cb87a); border-color: var(--success, #3cb87a); }
+
   /* TOAST */
   #toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -404,8 +417,9 @@
           <div class="team-players" id="tr-players"></div>
         </div>
       </div>
-      <div style="text-align:center;margin-top:8px;">
+      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn secondary" id="ressortear-btn" style="gap:8px;display:inline-flex;align-items:center;">↺ Novo Sorteio</button>
+        <button id="copy-result-btn">📋 Copiar Imagem</button>
       </div>
     </div>
   </div>
@@ -853,6 +867,173 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 /* ---- UTIL ---- */
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ---- COPY RESULT AS IMAGE ---- */
+async function copyResultImage() {
+  const btn = document.getElementById('copy-result-btn');
+  btn.textContent = '⏳ Gerando...'; btn.disabled = true;
+
+  const W = 800, PAD = 32, COL = (W - PAD*3) / 2;
+  const ct = [], tr = [];
+  document.querySelectorAll('#ct-players .team-player').forEach(row => {
+    ct.push({ name: row.querySelector('.tp-name').textContent, stars: row.querySelectorAll('.star-tp.lit').length });
+  });
+  document.querySelectorAll('#tr-players .team-player').forEach(row => {
+    tr.push({ name: row.querySelector('.tp-name').textContent, stars: row.querySelectorAll('.star-tp.lit').length });
+  });
+  const mapName  = document.getElementById('map-name').textContent;
+  const mapEmoji = document.getElementById('map-icon').textContent;
+  const rows = Math.max(ct.length, tr.length);
+  const H = 80 + 60 + 56 + rows * 48 + 40;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  const c = canvas.getContext('2d');
+  c.scale(2, 2);
+
+  // BG
+  c.fillStyle = '#0f1115';
+  c.fillRect(0, 0, W, H);
+
+  // Top accent line
+  const grad = c.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.5, '#e8a020');
+  grad.addColorStop(1, 'transparent');
+  c.fillStyle = grad;
+  c.fillRect(0, 0, W, 2);
+
+  // Title
+  c.font = 'bold 13px "Arial Narrow", Arial, sans-serif';
+  c.fillStyle = '#e8a020';
+  c.letterSpacing = '4px';
+  c.textAlign = 'center';
+  c.fillText('SORTEIO CS2', W/2, 28);
+
+  // Map pill
+  const mapText = mapEmoji + '  ' + mapName.toUpperCase();
+  c.font = 'bold 22px "Arial Narrow", Arial, sans-serif';
+  c.fillStyle = '#ffffff';
+  c.textAlign = 'center';
+  c.fillText(mapText, W/2, 62);
+
+  // Separator
+  c.strokeStyle = '#2a2d38';
+  c.lineWidth = 1;
+  c.beginPath(); c.moveTo(PAD, 76); c.lineTo(W - PAD, 76); c.stroke();
+
+  // Team headers
+  const headerY = 100;
+  // CT header bg
+  c.fillStyle = 'rgba(74,143,203,0.15)';
+  roundRect(c, PAD, headerY, COL, 40, 6);
+  c.fillStyle = '#4a8fcb';
+  c.font = 'bold 15px "Arial Narrow", Arial, sans-serif';
+  c.textAlign = 'left';
+  c.fillText('◈  COUNTER-TERRORISTS', PAD + 12, headerY + 26);
+  const ctStars = ct.reduce((a,p)=>a+p.stars,0);
+  c.fillStyle = '#f5c842';
+  c.font = 'bold 13px Arial, sans-serif';
+  c.textAlign = 'right';
+  c.fillText('★ ' + ctStars, PAD + COL - 12, headerY + 26);
+
+  // T header bg
+  const col2X = PAD*2 + COL;
+  c.fillStyle = 'rgba(224,90,26,0.15)';
+  roundRect(c, col2X, headerY, COL, 40, 6);
+  c.fillStyle = '#e05a1a';
+  c.font = 'bold 15px "Arial Narrow", Arial, sans-serif';
+  c.textAlign = 'left';
+  c.fillText('◈  TERRORISTS', col2X + 12, headerY + 26);
+  const trStars = tr.reduce((a,p)=>a+p.stars,0);
+  c.fillStyle = '#f5c842';
+  c.font = 'bold 13px Arial, sans-serif';
+  c.textAlign = 'right';
+  c.fillText('★ ' + trStars, col2X + COL - 12, headerY + 26);
+
+  // Players
+  const startY = headerY + 52;
+  for (let i = 0; i < rows; i++) {
+    const y = startY + i * 48;
+    const isEven = i % 2 === 0;
+
+    // CT player
+    if (ct[i]) {
+      if (isEven) { c.fillStyle = 'rgba(255,255,255,0.02)'; c.fillRect(PAD, y, COL, 44); }
+      c.font = 'bold 14px Arial, sans-serif';
+      c.fillStyle = '#d0d4e0';
+      c.textAlign = 'left';
+      c.fillText(ct[i].name.toUpperCase(), PAD + 12, y + 28);
+      drawStars(c, PAD + COL - 12, y + 28, ct[i].stars, true);
+    }
+
+    // TR player
+    if (tr[i]) {
+      if (isEven) { c.fillStyle = 'rgba(255,255,255,0.02)'; c.fillRect(col2X, y, COL, 44); }
+      c.font = 'bold 14px Arial, sans-serif';
+      c.fillStyle = '#d0d4e0';
+      c.textAlign = 'left';
+      c.fillText(tr[i].name.toUpperCase(), col2X + 12, y + 28);
+      drawStars(c, col2X + COL - 12, y + 28, tr[i].stars, true);
+    }
+
+    // row divider
+    c.strokeStyle = '#1d2029';
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(PAD, y+44); c.lineTo(PAD+COL, y+44); c.stroke();
+    c.beginPath(); c.moveTo(col2X, y+44); c.lineTo(col2X+COL, y+44); c.stroke();
+  }
+
+  // Footer
+  c.font = '11px Arial, sans-serif';
+  c.fillStyle = '#545a68';
+  c.textAlign = 'center';
+  c.fillText('call-of-menine.vercel.app', W/2, H - 12);
+
+  // Copy to clipboard
+  canvas.toBlob(async blob => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      btn.textContent = '✓ Copiado!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 Copiar Imagem'; btn.classList.remove('copied'); btn.disabled = false; }, 2500);
+    } catch(e) {
+      // Fallback: download
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'sorteio-cs2.png';
+      a.click();
+      btn.textContent = '📋 Copiar Imagem'; btn.disabled = false;
+    }
+  }, 'image/png');
+}
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x+r, y); c.lineTo(x+w-r, y);
+  c.quadraticCurveTo(x+w, y, x+w, y+r);
+  c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r);
+  c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y);
+  c.closePath(); c.fill();
+}
+
+function drawStars(c, rightX, y, count, small) {
+  const sz = small ? 11 : 14;
+  const total = 10;
+  const starW = sz + 2;
+  const totalW = total * starW;
+  let x = rightX - totalW;
+  for (let i = 1; i <= total; i++) {
+    c.font = sz + 'px Arial';
+    c.fillStyle = i <= count ? '#f5c842' : '#2a2d38';
+    c.textAlign = 'left';
+    c.fillText('★', x, y);
+    x += starW;
+  }
+}
+
+document.getElementById('copy-result-btn').addEventListener('click', copyResultImage);
 
 /* ---- INIT ---- */
 async function init() {
